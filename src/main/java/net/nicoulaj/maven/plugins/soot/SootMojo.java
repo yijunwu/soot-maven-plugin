@@ -15,6 +15,8 @@
  */
 package net.nicoulaj.maven.plugins.soot;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -23,9 +25,20 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import soot.Main;
+import soot.Pack;
+import soot.PackManager;
+import soot.Scene;
+import soot.Transform;
 import soot.options.Options;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import com.alibaba.intl.dftracker.GotoInstrumenter;
+
+import static soot.SootClass.SIGNATURES;
 
 /**
  * Mojo that invokes <a href="http://www.sable.mcgill.ca/soot">Soot</a>.
@@ -743,8 +756,8 @@ public final class SootMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
-        configureLogging();
-        configureOptions();
+        //configureLogging();
+        //configureOptions();
         run();
     }
 
@@ -814,6 +827,37 @@ public final class SootMojo
 //        options.set_XXXXXXX(annotFieldReadWrite);
         options.set_time( time );
         options.set_subtract_gc( subtractGC );
+
+        populateOptionsCp(options);
+    }
+
+    private void populateOptionsCp(Options options) {
+        String pathToAppend = "c:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\maven-plugin-api\\3.6.0\\maven-plugin-api-3.6.0.jar" + ";"
+            + "c:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\maven-core\\3.6.0\\maven-core-3.6.0.jar" + ";"
+            + "C:\\Users\\tanke.wyj\\.m2\\repository\\ca\\mcgill\\sable\\soot\\4.1.0\\soot-4.1.0.jar" + ";"
+            + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\plugin-tools\\maven-plugin-annotations\\3.2\\maven-plugin-annotations-3.2.jar" + ";"
+            + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\commons\\commons-lang3\\3.8.1\\commons-lang3-3.8.1.jar" + ";"
+            + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\maven-model\\3.6.0\\maven-model-3.6.0.jar" + ";"
+            + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\maven-artifact\\3.6.0\\maven-artifact-3.6.0.jar" + ";"
+            + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\codehaus\\plexus\\plexus-classworlds\\2.5.2\\plexus-classworlds-2.5.2.jar"
+            + ";C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\resolver\\maven-resolver-api\\1.3.1\\maven-resolver-api-1.3.1.jar"
+            + ";C:\\Users\\tanke.wyj\\.m2\\repository\\org\\codehaus\\plexus\\plexus-utils\\3.1.0\\plexus-utils-3.1.0.jar"
+            + ";.\\dal\\target\\classes";
+
+        try {
+            // 参考 《Maven plugin and fight with classloading》
+            // http://blog.chalda.cz/2018/02/17/Maven-plugin-and-fight-with-classloading.html
+            pathToAppend = String.join(";", this.project.getCompileClasspathElements());
+            pathToAppend = pathToAppend + ";" + NyseDalClasspath.path();
+        } catch (DependencyResolutionRequiredException e) {
+            e.printStackTrace();
+        }
+        options.set_prepend_classpath(true);
+        if (StringUtils.isEmpty(options.soot_classpath())) {
+            options.set_soot_classpath(pathToAppend);
+        } else {
+            options.set_soot_classpath(options.soot_classpath() + ";" + pathToAppend);
+        }
     }
 
     protected void run()
@@ -821,11 +865,44 @@ public final class SootMojo
     {
         try
         {
-            Main.v().run( new String[0] );
+            //Scene.v().loadBasicClasses();
+            //Scene.v().loadNecessaryClasses();
+            String[] args = new String[] {};
+            boolean flag = false;
+            if (this.project.getFile().getPath().contains("nyse\\dal")) {
+                populateOptionsCp(Options.v());
+
+                //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig", SIGNATURES);
+                //Scene.v().loadBasicClasses();
+                //Options.v().set_main_class("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig");
+                /* add a phase to transformer pack by call Pack.add */
+                Pack jtp = PackManager.v().getPack("jtp");
+                jtp.add(new Transform("jtp.instrumenter", GotoInstrumenter.v()));
+                //jtp.insertAfter(new Transform("jtp.instrumenter", GotoInstrumenter.v()), "jtp.instrumenter");
+                args = buildArgs();
+            }
+
+            System.out.println("sootClasspath: " + Options.v().soot_classpath());
+
+
+            Main.v().run(args);
         }
         catch ( soot.CompilationDeathException e )
         {
             throw new MojoFailureException( "Soot execution failed", e );
         }
+    }
+
+    String[] buildArgs() {
+        List<String> argsList = Arrays.asList(new String[] { //"-w",
+            //"-cp", "D:\\Dev\\ProjectsNew\\DFTracker\\dftracker\\target\\classes",
+            "-pp",
+            "-p", "jb", "use-original-names:true",
+            "-process-dir", "D:\\Dev\\ProjectsNew\\returning\\nyse\\dal\\target\\classes",
+            "-main-class", "com.alibaba.intl.nyse.dal.config.SequenceUtil", // main-class
+            "com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig" // argument classes
+        });
+        String[] args = new String[argsList.size()];
+        return argsList.toArray(args);
     }
 }
