@@ -400,6 +400,8 @@ public class NyseDalClasspath {
             + ";C:\\Users\\tanke.wyj\\Downloads\\commons-compiler-3.0.9.jar"
             + ";C:\\Users\\tanke.wyj\\Downloads\\janino-2.5.16.jar"
             + ";C:\\Users\\tanke.wyj\\.m2\\repository\\com\\thoughtworks\\xstream\\xstream\\1.4.9\\xstream-1.4.9.jar"
-            + ";C:\\Users\\tanke.wyj\\Downloads\\xmlpull-xpp3-1.1.4c.jar";
+            + ";C:\\Users\\tanke.wyj\\Downloads\\xmlpull-xpp3-1.1.4c.jar"
+            + ";C:\\Users\\tanke.wyj\\Downloads\\rt.jar"
+            + ";C:\\Users\\tanke.wyj\\.m2\\repository\\com\\alibaba\\intl\\dftracker\\1.0-SNAPSHOT\\dftracker-1.0-SNAPSHOT.jar";
     }
 }

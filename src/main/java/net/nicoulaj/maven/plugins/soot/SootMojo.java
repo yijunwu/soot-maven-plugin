@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.alibaba.intl.dftracker.FlowTrackingInstrumenter;
 import com.alibaba.intl.dftracker.GotoInstrumenter;
 
 import static soot.SootClass.SIGNATURES;
@@ -842,7 +843,8 @@ public final class SootMojo
             + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\codehaus\\plexus\\plexus-classworlds\\2.5.2\\plexus-classworlds-2.5.2.jar"
             + ";C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\resolver\\maven-resolver-api\\1.3.1\\maven-resolver-api-1.3.1.jar"
             + ";C:\\Users\\tanke.wyj\\.m2\\repository\\org\\codehaus\\plexus\\plexus-utils\\3.1.0\\plexus-utils-3.1.0.jar"
-            + ";.\\dal\\target\\classes";
+            + ";.\\dal\\target\\classes"
+            + ";C:\\Program Files\\Java\\jdk1.8.0_201\\jre\\lib\\rt.jar";
 
         try {
             // 参考 《Maven plugin and fight with classloading》
@@ -877,7 +879,7 @@ public final class SootMojo
                 //Options.v().set_main_class("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig");
                 /* add a phase to transformer pack by call Pack.add */
                 Pack jtp = PackManager.v().getPack("jtp");
-                jtp.add(new Transform("jtp.instrumenter", GotoInstrumenter.v()));
+                jtp.add(new Transform("jtp.instrumenter", FlowTrackingInstrumenter.v()));
                 //jtp.insertAfter(new Transform("jtp.instrumenter", GotoInstrumenter.v()), "jtp.instrumenter");
                 args = buildArgs();
             }
