@@ -17,12 +17,16 @@ package net.nicoulaj.maven.plugins.soot;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import soot.Main;
 import soot.Pack;
@@ -38,6 +42,7 @@ import java.util.stream.Collectors;
 
 import com.alibaba.intl.dftracker.FlowTrackingInstrumenter;
 import com.alibaba.intl.dftracker.GotoInstrumenter;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 import static soot.SootClass.SIGNATURES;
 
@@ -67,6 +72,25 @@ public final class SootMojo
      */
     @Parameter( property = "project", required = true, readonly = true )
     protected MavenProject project;
+
+    /**
+     * The current Maven session.
+     *
+     * @parameter expression="${session}"
+     * @required
+     * @readonly
+     */
+    @Parameter( property = "session", required = true, readonly = true )
+    private MavenSession mavenSession;
+
+    /**
+     * The Maven BuildPluginManager component.
+     *
+     * @component
+     * @required
+     */
+    @Component
+    private BuildPluginManager pluginManager;
 
     /**
      * Display the textual help message and exit immediately without further processing.
@@ -833,6 +857,30 @@ public final class SootMojo
     }
 
     private void populateOptionsCp(Options options) {
+        String dependencyClasspath = "";
+        try {
+            executeMojo(
+                plugin(
+                    groupId("org.apache.maven.plugins"),
+                    artifactId("maven-dependency-plugin"),
+                    version("3.0.0")
+                ),
+                goal("build-classpath"),
+                configuration(
+                    element(name("outputProperty"), "mdep.outputProperty.embedded")
+                ),
+                executionEnvironment(
+                    project,
+                    mavenSession,
+                    pluginManager
+                )
+            );
+            dependencyClasspath = (String)this.project.getProperties().get("mdep.outputProperty.embedded");
+            System.out.println("dependencyClasspath: " + dependencyClasspath);
+        } catch (MojoExecutionException e) {
+            e.printStackTrace();
+        }
+
         String pathToAppend = "c:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\maven-plugin-api\\3.6.0\\maven-plugin-api-3.6.0.jar" + ";"
             + "c:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\maven-core\\3.6.0\\maven-core-3.6.0.jar" + ";"
             + "C:\\Users\\tanke.wyj\\.m2\\repository\\ca\\mcgill\\sable\\soot\\4.1.0\\soot-4.1.0.jar" + ";"
@@ -856,9 +904,9 @@ public final class SootMojo
         }
         options.set_prepend_classpath(true);
         if (StringUtils.isEmpty(options.soot_classpath())) {
-            options.set_soot_classpath(pathToAppend);
+            options.set_soot_classpath(dependencyClasspath);
         } else {
-            options.set_soot_classpath(options.soot_classpath() + ";" + pathToAppend);
+            options.set_soot_classpath(options.soot_classpath() + ";" + dependencyClasspath);
         }
     }
 
