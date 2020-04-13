@@ -55,7 +55,8 @@ import static soot.SootClass.SIGNATURES;
 @Mojo(
     name = SootMojo.NAME,
     defaultPhase = LifecyclePhase.COMPILE,
-    threadSafe = false )
+    threadSafe = false,
+    requiresDependencyResolution = ResolutionScope.COMPILE)
 public final class SootMojo
     extends AbstractMojo
 {
