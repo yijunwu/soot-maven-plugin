@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.alibaba.intl.dftracker.FlowTrackingInstrumenter;
-import com.alibaba.intl.dftracker.GotoInstrumenter;
+
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 import static soot.SootClass.SIGNATURES;
