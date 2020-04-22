@@ -948,10 +948,12 @@ public final class SootMojo
         List<String> argsList = Arrays.asList(new String[] { //"-w",
             //"-cp", "D:\\Dev\\ProjectsNew\\DFTracker\\dftracker\\target\\classes",
             "-pp",
+            //"-output-format", "jimple",
             "-p", "jb", "use-original-names:true",
             "-process-dir", "D:\\Dev\\ProjectsNew\\returning\\nyse\\dal\\target\\classes",
             "-main-class", "com.alibaba.intl.nyse.dal.config.SequenceUtil", // main-class
-            "com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig" // argument classes
+            "com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig",
+            "com.alibaba.intl.dftracker.ExecutionNodes"// argument classes
         });
         String[] args = new String[argsList.size()];
         return argsList.toArray(args);
