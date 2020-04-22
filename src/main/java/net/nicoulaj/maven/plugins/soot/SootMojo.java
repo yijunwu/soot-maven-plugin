@@ -877,7 +877,7 @@ public final class SootMojo
                 )
             );
             dependencyClasspath = (String)this.project.getProperties().get("mdep.outputProperty.embedded");
-            System.out.println("dependencyClasspath: " + dependencyClasspath);
+            //System.out.println("dependencyClasspath: " + dependencyClasspath);
         } catch (MojoExecutionException e) {
             e.printStackTrace();
         }
@@ -920,7 +920,9 @@ public final class SootMojo
             //Scene.v().loadNecessaryClasses();
             String[] args = new String[] {};
             boolean flag = false;
-            if (this.project.getFile().getPath().contains("nyse\\dal")) {
+            boolean contains = this.project.getFile().getPath().contains("nyse\\dal")
+                    || this.project.getFile().getPath().contains("nyse\\entry");
+            if (contains) {
                 populateOptionsCp(Options.v());
 
                 //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig", SIGNATURES);
@@ -945,12 +947,13 @@ public final class SootMojo
     }
 
     String[] buildArgs() {
+        String outputDir = this.project.getModel().getBuild().getOutputDirectory();
         List<String> argsList = Arrays.asList(new String[] { //"-w",
             //"-cp", "D:\\Dev\\ProjectsNew\\DFTracker\\dftracker\\target\\classes",
             "-pp",
             //"-output-format", "jimple",
             "-p", "jb", "use-original-names:true",
-            "-process-dir", "D:\\Dev\\ProjectsNew\\returning\\nyse\\dal\\target\\classes",
+            "-process-dir", outputDir,
             "-main-class", "com.alibaba.intl.nyse.dal.config.SequenceUtil", // main-class
             "com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig",
             "com.alibaba.intl.dftracker.ExecutionNodes"// argument classes
