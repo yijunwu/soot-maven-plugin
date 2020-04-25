@@ -931,6 +931,7 @@ public final class SootMojo
             //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.NyseDataSourceConfig", BODIES);
             //Scene.v().addBasicClass("com.alibaba.intl.dftracker.annotation.EnhancedForTracking", SIGNATURES);
             Scene.v().addBasicClass("com.alibaba.intl.sourcing.trade.open.api.common.model.TradeProduct", BODIES);
+            Scene.v().addBasicClass("com.alibaba.onetouch.apollo.fxrefund.client.DTO.RefundDetailDTO", SIGNATURES);
             Main.v().run(args);
         }
         catch ( soot.CompilationDeathException e )
