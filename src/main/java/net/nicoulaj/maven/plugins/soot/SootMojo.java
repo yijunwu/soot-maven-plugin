@@ -782,6 +782,9 @@ public final class SootMojo
     @Parameter( defaultValue = "false" )
     protected boolean oaat;
 
+    @Parameter( defaultValue = "" )
+    protected String modulePatterns;
+
     /**
      * @throws MojoExecutionException
      * @throws MojoFailureException
@@ -906,10 +909,12 @@ public final class SootMojo
             //Scene.v().loadNecessaryClasses();
             String[] args = new String[] {};
             boolean flag = false;
-            boolean contains = this.project.getFile().getPath().contains("nyse\\dal")
-                    || this.project.getFile().getPath().contains("nyse\\entry")
-                    || this.project.getFile().getPath().contains("nyse\\biz");
-            if (contains) {
+
+            boolean included = isModuleIncluded(this.modulePatterns, this.project);
+//            boolean contains = this.project.getFile().getPath().contains("nyse\\dal")
+//                    || this.project.getFile().getPath().contains("nyse\\entry")
+//                    || this.project.getFile().getPath().contains("nyse\\biz");
+            if (included) {
                 //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig", SIGNATURES);
                 //Scene.v().loadBasicClasses();
                 //Options.v().set_main_class("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig");
@@ -932,6 +937,12 @@ public final class SootMojo
         {
             throw new MojoFailureException( "Soot execution failed", e );
         }
+    }
+
+    private boolean isModuleIncluded(String modulePatterns, MavenProject project) {
+        if (modulePatterns == null) { return true; }
+
+        return Arrays.stream(modulePatterns.split(",")).anyMatch((p) -> project.getFile().getPath().contains(p));
     }
 
     String[] buildArgs() {
