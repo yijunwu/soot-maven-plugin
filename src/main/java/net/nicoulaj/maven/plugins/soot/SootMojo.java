@@ -776,6 +776,12 @@ public final class SootMojo
     protected boolean subtractGC;
 
     /**
+     * One class at a time
+     */
+    @Parameter( defaultValue = "false" )
+    protected boolean oaat;
+
+    /**
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
@@ -854,6 +860,8 @@ public final class SootMojo
         options.set_time( time );
         options.set_subtract_gc( subtractGC );
 
+        options.set_oaat( oaat );
+
         populateOptionsCp(options);
     }
 
@@ -927,6 +935,7 @@ public final class SootMojo
             //"-cp", "D:\\Dev\\ProjectsNew\\DFTracker\\dftracker\\target\\classes",
             "-pp",
             "-keep-line-number",
+            //"-oaat",
             //"-output-format", "jimple",
             "-p", "jb", "use-original-names:true",
             "-p", "jop", "enabled:false",
