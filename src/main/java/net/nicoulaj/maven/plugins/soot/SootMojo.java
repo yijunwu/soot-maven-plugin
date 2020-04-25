@@ -922,7 +922,7 @@ public final class SootMojo
 
             System.out.println("sootClasspath: " + Options.v().soot_classpath());
 
-            //Scene.v().addBasicClass("java.util.Objects", SIGNATURES);
+            Scene.v().addBasicClass("java.util.Objects", SIGNATURES);
             //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.NyseDataSourceConfig", BODIES);
             //Scene.v().addBasicClass("com.alibaba.intl.dftracker.annotation.EnhancedForTracking", SIGNATURES);
             Scene.v().addBasicClass("com.alibaba.intl.sourcing.trade.open.api.common.model.TradeProduct", BODIES);
