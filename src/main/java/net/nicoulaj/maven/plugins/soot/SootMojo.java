@@ -319,7 +319,7 @@ public final class SootMojo
      * By default, the first class encountered with a main method is treated as the main class (entry point) in whole-
      * program analysis. This option overrides this default.
      */
-    @Parameter
+    @Parameter( defaultValue = "")
     protected String mainClass;
 
     /**
@@ -783,7 +783,7 @@ public final class SootMojo
         throws MojoExecutionException, MojoFailureException
     {
         //configureLogging();
-        //configureOptions();
+        configureOptions();
         run();
     }
 
@@ -817,7 +817,7 @@ public final class SootMojo
         options.set_allow_phantom_refs( allowPhantomRefs );
         options.set_no_bodies_for_excluded( noBodiesForExcluded );
         options.set_j2me( j2me );
-        options.set_main_class( mainClass );
+        options.set_main_class( mainClass == null ? "" : mainClass);
         options.set_polyglot( polyglot );
         options.set_output_dir( outputDirectory );
         options.set_output_format( outputFormat.getValue() );
@@ -877,32 +877,10 @@ public final class SootMojo
                 )
             );
             dependencyClasspath = (String)this.project.getProperties().get("mdep.outputProperty.embedded");
-            //System.out.println("dependencyClasspath: " + dependencyClasspath);
         } catch (MojoExecutionException e) {
             e.printStackTrace();
         }
 
-        String pathToAppend = "c:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\maven-plugin-api\\3.6.0\\maven-plugin-api-3.6.0.jar" + ";"
-            + "c:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\maven-core\\3.6.0\\maven-core-3.6.0.jar" + ";"
-            + "C:\\Users\\tanke.wyj\\.m2\\repository\\ca\\mcgill\\sable\\soot\\4.1.0\\soot-4.1.0.jar" + ";"
-            + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\plugin-tools\\maven-plugin-annotations\\3.2\\maven-plugin-annotations-3.2.jar" + ";"
-            + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\commons\\commons-lang3\\3.8.1\\commons-lang3-3.8.1.jar" + ";"
-            + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\maven-model\\3.6.0\\maven-model-3.6.0.jar" + ";"
-            + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\maven-artifact\\3.6.0\\maven-artifact-3.6.0.jar" + ";"
-            + "C:\\Users\\tanke.wyj\\.m2\\repository\\org\\codehaus\\plexus\\plexus-classworlds\\2.5.2\\plexus-classworlds-2.5.2.jar"
-            + ";C:\\Users\\tanke.wyj\\.m2\\repository\\org\\apache\\maven\\resolver\\maven-resolver-api\\1.3.1\\maven-resolver-api-1.3.1.jar"
-            + ";C:\\Users\\tanke.wyj\\.m2\\repository\\org\\codehaus\\plexus\\plexus-utils\\3.1.0\\plexus-utils-3.1.0.jar"
-            + ";.\\dal\\target\\classes"
-            + ";C:\\Program Files\\Java\\jdk1.8.0_201\\jre\\lib\\rt.jar";
-
-        try {
-            // 参考 《Maven plugin and fight with classloading》
-            // http://blog.chalda.cz/2018/02/17/Maven-plugin-and-fight-with-classloading.html
-            pathToAppend = String.join(";", this.project.getCompileClasspathElements());
-            pathToAppend = pathToAppend + ";" + NyseDalClasspath.path();
-        } catch (DependencyResolutionRequiredException e) {
-            e.printStackTrace();
-        }
         options.set_prepend_classpath(true);
         if (StringUtils.isEmpty(options.soot_classpath())) {
             options.set_soot_classpath(dependencyClasspath);
@@ -923,8 +901,6 @@ public final class SootMojo
                     || this.project.getFile().getPath().contains("nyse\\entry")
                     || this.project.getFile().getPath().contains("nyse\\biz");
             if (contains) {
-                populateOptionsCp(Options.v());
-
                 //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig", SIGNATURES);
                 //Scene.v().loadBasicClasses();
                 //Options.v().set_main_class("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig");
