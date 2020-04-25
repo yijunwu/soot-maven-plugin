@@ -921,7 +921,8 @@ public final class SootMojo
             String[] args = new String[] {};
             boolean flag = false;
             boolean contains = this.project.getFile().getPath().contains("nyse\\dal")
-                    || this.project.getFile().getPath().contains("nyse\\entry");
+                    || this.project.getFile().getPath().contains("nyse\\entry")
+                    || this.project.getFile().getPath().contains("nyse\\biz");
             if (contains) {
                 populateOptionsCp(Options.v());
 
@@ -957,12 +958,13 @@ public final class SootMojo
             "-p", "jop", "enabled:false",
             //"-write-local-annotations",
             //"-p", "bb", "use-original-names:true",
+            "-allow-phantom-refs",
             "-p", "bop", "enabled:false",
             "-process-dir", outputDir,
             "-main-class", "com.alibaba.intl.nyse.dal.config.SequenceUtil", // main-class
             "com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig",
-            "com.alibaba.intl.dftracker.ExecutionNodes",// argument classes
-            "com.alibaba.intl.dftracker.Shadows"
+            "com.alibaba.intl.dftracker.runtime.ExecutionNodes",// argument classes
+            "com.alibaba.intl.dftracker.runtime.Shadows"
         });
         String[] args = new String[argsList.size()];
         return argsList.toArray(args);
