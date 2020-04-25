@@ -942,6 +942,7 @@ public final class SootMojo
                 //"-keep-line-number",
                 //"-oaat",
                 //"-output-format", "jimple",
+                //"-time", //会引起报错： timer split has already been started!
                 "-p", "jb", "use-original-names:true",
                 "-p", "jop", "enabled:false",
                 //"-write-local-annotations",
