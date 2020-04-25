@@ -939,7 +939,7 @@ public final class SootMojo
         List<String> argsList = Arrays.asList(new String[] { //"-w",
             //"-cp", "D:\\Dev\\ProjectsNew\\DFTracker\\dftracker\\target\\classes",
             "-pp",
-            "-keep-line-number",
+            //"-keep-line-number",
             //"-oaat",
             //"-output-format", "jimple",
             "-p", "jb", "use-original-names:true",
