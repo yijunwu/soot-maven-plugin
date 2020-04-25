@@ -936,24 +936,23 @@ public final class SootMojo
 
     String[] buildArgs() {
         String outputDir = this.project.getModel().getBuild().getOutputDirectory();
-        List<String> argsList = Arrays.asList(new String[] { //"-w",
-            //"-cp", "D:\\Dev\\ProjectsNew\\DFTracker\\dftracker\\target\\classes",
-            "-pp",
-            //"-keep-line-number",
-            //"-oaat",
-            //"-output-format", "jimple",
-            "-p", "jb", "use-original-names:true",
-            "-p", "jop", "enabled:false",
-            //"-write-local-annotations",
-            //"-p", "bb", "use-original-names:true",
-            "-allow-phantom-refs",
-            "-p", "bop", "enabled:false",
-            "-process-dir", outputDir,
-            "-main-class", "com.alibaba.intl.nyse.dal.config.SequenceUtil", // main-class
-            "com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig",
-            "com.alibaba.intl.dftracker.runtime.ExecutionNodes",// argument classes
-            "com.alibaba.intl.dftracker.runtime.Shadows"
-        });
+        List<String> argsList = Arrays.asList(//"-w",
+                //"-cp", "D:\\Dev\\ProjectsNew\\DFTracker\\dftracker\\target\\classes",
+                "-pp",
+                //"-keep-line-number",
+                //"-oaat",
+                //"-output-format", "jimple",
+                "-p", "jb", "use-original-names:true",
+                "-p", "jop", "enabled:false",
+                //"-write-local-annotations",
+                //"-p", "bb", "use-original-names:true",
+                "-allow-phantom-refs",
+                "-p", "bop", "enabled:false",
+                "-process-dir", outputDir,
+                //"-main-class", "com.alibaba.intl.nyse.dal.config.SequenceUtil", // main-class
+                "com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig",
+                "com.alibaba.intl.dftracker.runtime.ExecutionNodes",// argument classes
+                "com.alibaba.intl.dftracker.runtime.Shadows");
         String[] args = new String[argsList.size()];
         return argsList.toArray(args);
     }
