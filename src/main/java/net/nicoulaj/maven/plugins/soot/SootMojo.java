@@ -911,8 +911,7 @@ public final class SootMojo
         }
     }
 
-    protected void run()
-        throws MojoFailureException
+    protected void run() throws MojoFailureException
     {
         try
         {
@@ -937,7 +936,6 @@ public final class SootMojo
             }
 
             System.out.println("sootClasspath: " + Options.v().soot_classpath());
-
 
             Main.v().run(args);
         }
