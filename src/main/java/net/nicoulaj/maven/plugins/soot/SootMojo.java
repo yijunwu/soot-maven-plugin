@@ -44,6 +44,7 @@ import com.alibaba.intl.dftracker.FlowTrackingInstrumenter;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
+import static soot.SootClass.BODIES;
 import static soot.SootClass.SIGNATURES;
 
 /**
@@ -921,6 +922,10 @@ public final class SootMojo
 
             System.out.println("sootClasspath: " + Options.v().soot_classpath());
 
+            //Scene.v().addBasicClass("java.util.Objects", SIGNATURES);
+            //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.NyseDataSourceConfig", BODIES);
+            //Scene.v().addBasicClass("com.alibaba.intl.dftracker.annotation.EnhancedForTracking", SIGNATURES);
+            //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.NyseDataSourceConfig", BODIES);
             Main.v().run(args);
         }
         catch ( soot.CompilationDeathException e )
