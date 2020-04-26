@@ -1051,6 +1051,14 @@ public final class SootMojo extends AbstractMojo
             Scene.v().addBasicClass("com.alibaba.onetouch.apollo.fxrefund.client.DTO.RefundDetailDTO", SIGNATURES);
 
             Main.v().run(args);
+
+            //Scene.v().releaseActiveHierarchy();
+            //Scene.v().releaseCallGraph();
+            //Scene.v().releaseClientAccessibilityOracle();
+            //Scene.v().releaseFastHierarchy();
+            //Scene.v().releasePointsToAnalysis();
+            //Scene.v().releaseReachableMethods();
+            //Scene.v().releaseSideEffectAnalysis();
         }
         catch ( soot.CompilationDeathException e )
         {
