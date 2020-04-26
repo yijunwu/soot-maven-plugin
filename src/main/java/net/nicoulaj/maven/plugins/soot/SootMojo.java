@@ -886,10 +886,12 @@ public final class SootMojo extends AbstractMojo
         throws MojoExecutionException {
         try {
             RunProcess runProcess = new RunProcess(workingDirectory, getJavaExecutable());
-            runProcess.run(true, args, environmentVariables);
+            int exitCode = runProcess.run(true, args, environmentVariables);
+            if (exitCode != 0) {
+                throw new RuntimeException("Soot failed!");
+            }
             return runProcess;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             throw new MojoExecutionException("Could not exec java", ex);
         }
     }
