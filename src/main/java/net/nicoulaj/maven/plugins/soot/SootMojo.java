@@ -782,6 +782,15 @@ public final class SootMojo
     @Parameter( defaultValue = "false" )
     protected boolean oaat;
 
+    /**
+     * enabled
+     */
+    @Parameter( defaultValue = "true" )
+    protected boolean enabled;
+
+    /**
+     * Module patterns
+     */
     @Parameter( defaultValue = "" )
     protected String modulePatterns;
 
@@ -792,6 +801,7 @@ public final class SootMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
+        if (!enabled) { return; }
         //configureLogging();
         configureOptions();
         run();
