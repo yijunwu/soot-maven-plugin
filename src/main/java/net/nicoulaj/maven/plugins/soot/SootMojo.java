@@ -846,12 +846,14 @@ public final class SootMojo extends AbstractMojo
         configureOptions();
 
         File workingDirectory = null;
-        List<String> mergedArgs = new ArrayList<>();
         List<String> args = Arrays.asList(
-            "-cp", Options.v().soot_classpath(),
-            "soot.Main"
+                "-cp", "C:\\Users\\wuyijun\\Downloads\\soot-4.1.0-jar-with-dependencies.jar;C:\\Users\\wuyijun\\.m2\\repository\\com\\alibaba\\intl\\dftracker\\1.0-SNAPSHOT\\dftracker-1.0-SNAPSHOT.jar",
+                "com.alibaba.intl.dftracker.LaunchSoot"
+                //"soot.Main"
         );
-        mergedArgs.addAll(args);
+        List<String> mergedArgs = new ArrayList<>(args);
+        mergedArgs.add("-cp");
+        mergedArgs.add(Options.v().soot_classpath());
 
         List<String> sootArgs = Arrays.asList(buildArgs());
 
@@ -861,8 +863,7 @@ public final class SootMojo extends AbstractMojo
         RunProcess runProcess = runProcess(workingDirectory, mergedArgs, environmentVariables);
         try {
             waitForForkedSpringApplication();
-        }
-        catch (MojoExecutionException | MojoFailureException ex) {
+        } catch (MojoExecutionException | MojoFailureException ex) {
             runProcess.kill();
             throw ex;
         }
@@ -885,7 +886,9 @@ public final class SootMojo extends AbstractMojo
     private RunProcess runProcess(File workingDirectory, List<String> args, Map<String, String> environmentVariables)
         throws MojoExecutionException {
         try {
-            RunProcess runProcess = new RunProcess(workingDirectory, getJavaExecutable());
+            String javaExecutable = getJavaExecutable();
+            RunProcess runProcess = new RunProcess(workingDirectory, javaExecutable);
+            System.out.println("Command: " + javaExecutable + " " + args);
             int exitCode = runProcess.run(true, args, environmentVariables);
             if (exitCode != 0) {
                 throw new RuntimeException("Soot failed!");

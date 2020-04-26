@@ -110,6 +110,7 @@
         <groupId>ca.mcgill.sable</groupId>
         <artifactId>soot</artifactId>
         <version>${soot.version}</version>
+        <classifier>jar-with-dependencies</classifier>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -131,6 +132,7 @@
     <dependency>
       <groupId>ca.mcgill.sable</groupId>
       <artifactId>soot</artifactId>
+      <classifier>jar-with-dependencies</classifier>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
