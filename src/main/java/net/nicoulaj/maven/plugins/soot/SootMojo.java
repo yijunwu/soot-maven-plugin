@@ -28,6 +28,8 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.toolchain.Toolchain;
+import org.apache.maven.toolchain.ToolchainManager;
 import soot.Main;
 import soot.Pack;
 import soot.PackManager;
@@ -35,13 +37,22 @@ import soot.Scene;
 import soot.Transform;
 import soot.options.Options;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.management.MBeanServerConnection;
+import javax.management.ReflectionException;
+import javax.management.remote.JMXConnector;
 
 import com.alibaba.intl.dftracker.FlowTrackingInstrumenter;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 import static soot.SootClass.BODIES;
@@ -58,8 +69,7 @@ import static soot.SootClass.SIGNATURES;
     defaultPhase = LifecyclePhase.COMPILE,
     threadSafe = false,
     requiresDependencyResolution = ResolutionScope.COMPILE)
-public final class SootMojo
-    extends AbstractMojo
+public final class SootMojo extends AbstractMojo
 {
 
     /**
@@ -93,6 +103,13 @@ public final class SootMojo
      */
     @Component
     private BuildPluginManager pluginManager;
+
+    /**
+     * The toolchain manager to use to locate a custom JDK.
+     * @since 2.3.0
+     */
+    @Component
+    private ToolchainManager toolchainManager;
 
     /**
      * Display the textual help message and exit immediately without further processing.
@@ -789,6 +806,12 @@ public final class SootMojo
     protected boolean enabled;
 
     /**
+     * fork
+     */
+    @Parameter( defaultValue = "true" )
+    protected boolean fork;
+
+    /**
      * Module patterns
      */
     @Parameter( defaultValue = "" )
@@ -801,6 +824,77 @@ public final class SootMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
+        if (!enabled) { return; }
+        //configureLogging();
+        if (fork) {
+            runWithForkedJvm();
+        } else {
+            runWithMavenJvm();
+        }
+    }
+
+    protected void runWithForkedJvm()
+        throws MojoExecutionException, MojoFailureException {
+
+        configureOptions();
+
+        File workingDirectory = null;
+        List<String> mergedArgs = new ArrayList<>();
+        List<String> args = Arrays.asList(
+            "-cp", Options.v().soot_classpath(),
+            "soot.Main"
+        );
+        mergedArgs.addAll(args);
+
+        List<String> sootArgs = Arrays.asList(buildArgs());
+
+        mergedArgs.addAll(sootArgs);
+
+        Map<String, String> environmentVariables = emptyMap();
+        RunProcess runProcess = runProcess(workingDirectory, mergedArgs, environmentVariables);
+        try {
+            waitForForkedSpringApplication();
+        }
+        catch (MojoExecutionException | MojoFailureException ex) {
+            runProcess.kill();
+            throw ex;
+        }
+    }
+
+    private void waitForForkedSpringApplication() throws MojoFailureException, MojoExecutionException {
+        try {
+            // TODO wuyijun 待实现
+            if (true) { return; }
+            throw new IOException();
+        }
+        catch (IOException ex) {
+            throw new MojoFailureException("Could not contact Spring Boot application", ex);
+        }
+        catch (Exception ex) {
+            throw new MojoExecutionException("Could not figure out if the application has started", ex);
+        }
+    }
+
+    private RunProcess runProcess(File workingDirectory, List<String> args, Map<String, String> environmentVariables)
+        throws MojoExecutionException {
+        try {
+            RunProcess runProcess = new RunProcess(workingDirectory, getJavaExecutable());
+            runProcess.run(true, args, environmentVariables);
+            return runProcess;
+        }
+        catch (Exception ex) {
+            throw new MojoExecutionException("Could not exec java", ex);
+        }
+    }
+
+    protected String getJavaExecutable() {
+        Toolchain toolchain = this.toolchainManager.getToolchainFromBuildContext("jdk", this.mavenSession);
+        String javaExecutable = (toolchain != null) ? toolchain.findTool("java") : null;
+        return (javaExecutable != null) ? javaExecutable : new JavaExecutable().toString();
+    }
+
+    protected void runWithMavenJvm()
+        throws MojoExecutionException, MojoFailureException {
         if (!enabled) { return; }
         //configureLogging();
         configureOptions();
@@ -924,17 +1018,26 @@ public final class SootMojo
 //            boolean contains = this.project.getFile().getPath().contains("nyse\\dal")
 //                    || this.project.getFile().getPath().contains("nyse\\entry")
 //                    || this.project.getFile().getPath().contains("nyse\\biz");
-            if (included) {
-                //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig", SIGNATURES);
-                //Scene.v().loadBasicClasses();
-                //Options.v().set_main_class("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig");
-                /* add a phase to transformer pack by call Pack.add */
-                Pack jtp = PackManager.v().getPack("jtp");
+            if (!included) { return; }
+
+            //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig", SIGNATURES);
+            //Scene.v().loadBasicClasses();
+            //Options.v().set_main_class("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig");
+            /* add a phase to transformer pack by call Pack.add */
+            Pack jtp = PackManager.v().getPack("jtp");
+            boolean found = false;
+            while (jtp.iterator().hasNext()) {
+                Transform next = jtp.iterator().next();
+                if (next.getTransformer() instanceof FlowTrackingInstrumenter) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
                 jtp.add(new Transform("jtp.instrumenter", FlowTrackingInstrumenter.v()));
-                //jtp.insertAfter(new Transform("jtp.instrumenter", GotoInstrumenter.v()), "jtp.instrumenter");
-                args = buildArgs();
             }
 
+            args = buildArgs();
             System.out.println("sootClasspath: " + Options.v().soot_classpath());
 
             Scene.v().addBasicClass("java.util.Objects", SIGNATURES);
@@ -942,7 +1045,11 @@ public final class SootMojo
             //Scene.v().addBasicClass("com.alibaba.intl.dftracker.annotation.EnhancedForTracking", SIGNATURES);
             Scene.v().addBasicClass("com.alibaba.intl.sourcing.trade.open.api.common.model.TradeProduct", BODIES);
             Scene.v().addBasicClass("com.alibaba.intl.dftracker.annotation.TrackedUnitAnnotation", BODIES);
+            Scene.v().addBasicClass("com.alibaba.intl.dftracker.runtime.ExecutionNodes", BODIES);
+            Scene.v().addBasicClass("com.alibaba.intl.dftracker.runtime.Shadows", BODIES);
+            Scene.v().addBasicClass("com.alibaba.intl.dftracker.runtime.Shadow", BODIES);
             Scene.v().addBasicClass("com.alibaba.onetouch.apollo.fxrefund.client.DTO.RefundDetailDTO", SIGNATURES);
+
             Main.v().run(args);
         }
         catch ( soot.CompilationDeathException e )
@@ -974,9 +1081,11 @@ public final class SootMojo
                 "-p", "bop", "enabled:false",
                 "-process-dir", outputDir,
                 //"-main-class", "com.alibaba.intl.nyse.dal.config.SequenceUtil", // main-class
-                "com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig",
+                //"com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig",
                 "com.alibaba.intl.dftracker.runtime.ExecutionNodes",// argument classes
-                "com.alibaba.intl.dftracker.runtime.Shadows");
+                "com.alibaba.intl.dftracker.runtime.Shadows",
+                "com.alibaba.intl.dftracker.runtime.Shadow"
+                );
         String[] args = new String[argsList.size()];
         return argsList.toArray(args);
     }
