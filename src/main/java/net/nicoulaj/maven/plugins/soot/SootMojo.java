@@ -825,6 +825,13 @@ public final class SootMojo extends AbstractMojo
         throws MojoExecutionException, MojoFailureException
     {
         if (!enabled) { return; }
+
+        boolean included = isModuleIncluded(this.modulePatterns, this.project);
+        //            boolean contains = this.project.getFile().getPath().contains("nyse\\dal")
+        //                    || this.project.getFile().getPath().contains("nyse\\entry")
+        //                    || this.project.getFile().getPath().contains("nyse\\biz");
+        if (!included) { return; }
+
         //configureLogging();
         if (fork) {
             runWithForkedJvm();
@@ -1013,12 +1020,6 @@ public final class SootMojo extends AbstractMojo
             //Scene.v().loadNecessaryClasses();
             String[] args = new String[] {};
             boolean flag = false;
-
-            boolean included = isModuleIncluded(this.modulePatterns, this.project);
-//            boolean contains = this.project.getFile().getPath().contains("nyse\\dal")
-//                    || this.project.getFile().getPath().contains("nyse\\entry")
-//                    || this.project.getFile().getPath().contains("nyse\\biz");
-            if (!included) { return; }
 
             //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig", SIGNATURES);
             //Scene.v().loadBasicClasses();
