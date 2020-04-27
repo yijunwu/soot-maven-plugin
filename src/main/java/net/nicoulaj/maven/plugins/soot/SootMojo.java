@@ -1025,28 +1025,6 @@ public final class SootMojo extends AbstractMojo
         }
     }
 
-    protected void run() throws MojoFailureException
-    {
-        try
-        {
-            //Scene.v().loadBasicClasses();
-            //Scene.v().loadNecessaryClasses();
-            String[] args = new String[] {};
-
-            //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig", SIGNATURES);
-            //Scene.v().loadBasicClasses();
-            //Options.v().set_main_class("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig");
-
-            args = buildArgs();
-            System.out.println("sootClasspath: " + Options.v().soot_classpath());
-
-            LaunchSoot.main(args);
-
-        } catch (soot.CompilationDeathException e) {
-            throw new MojoFailureException( "Soot execution failed", e );
-        }
-    }
-
     private boolean isModuleIncluded(String modulePatterns, MavenProject project) {
         if (modulePatterns == null) { return true; }
 
