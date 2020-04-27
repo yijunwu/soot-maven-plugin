@@ -1059,6 +1059,7 @@ public final class SootMojo extends AbstractMojo
                 "-allow-phantom-refs",
                 "-p", "bop", "enabled:false",
                 "-process-dir", processDir,
+                "-output-dir", processDir,
                 //"-main-class", "com.alibaba.intl.nyse.dal.config.SequenceUtil", // main-class
                 //"com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig",
                 "com.alibaba.intl.dftracker.runtime.ExecutionNodes",// argument classes
