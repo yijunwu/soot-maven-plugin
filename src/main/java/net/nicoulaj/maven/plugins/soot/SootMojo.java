@@ -867,11 +867,14 @@ public final class SootMojo extends AbstractMojo
             sootArgs1.add("-cp");
             sootArgs1.add(sootClasspath);
         }
+        List<String> mergedArgs = new ArrayList<>(sootArgs1);
+        if (this.debug) {
+            mergedArgs.add("-debug");
+        }
 
         List<String> sootArgs2 = Arrays.asList(buildSootArgsWithoutClasspath(sootClasspath, processDir));
-
-        List<String> mergedArgs = new ArrayList<>(sootArgs1);
         mergedArgs.addAll(sootArgs2);
+
         return mergedArgs;
     }
 
