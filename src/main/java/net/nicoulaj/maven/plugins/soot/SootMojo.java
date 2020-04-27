@@ -39,6 +39,9 @@ import soot.options.Options;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,6 +56,7 @@ import com.alibaba.intl.dftracker.FlowTrackingInstrumenter;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 import static soot.SootClass.BODIES;
@@ -847,13 +851,21 @@ public final class SootMojo extends AbstractMojo
 
         File workingDirectory = null;
         List<String> args = Arrays.asList(
-                "-cp", "C:\\Users\\wuyijun\\Downloads\\soot-4.1.0-jar-with-dependencies.jar;C:\\Users\\wuyijun\\.m2\\repository\\com\\alibaba\\intl\\dftracker\\1.0-SNAPSHOT\\dftracker-1.0-SNAPSHOT.jar",
+                "-cp", getSootMinimalClasspath(Options.v().soot_classpath()),
                 "com.alibaba.intl.dftracker.LaunchSoot"
                 //"soot.Main"
         );
         List<String> mergedArgs = new ArrayList<>(args);
-        mergedArgs.add("-cp");
-        mergedArgs.add(Options.v().soot_classpath());
+        mergedArgs.add("-cpfile");
+        Path cpFile = Paths.get(outputDirectory, "cpfile.tmp");
+        try {
+            Files.write(cpFile, singletonList(Options.v().soot_classpath()));
+            mergedArgs.add(cpFile.toString());
+        } catch (IOException e) {
+            throw new MojoFailureException("Can NOT write to file" + cpFile);
+        }
+        //mergedArgs.add("-cp");
+        //mergedArgs.add(Options.v().soot_classpath());
 
         List<String> sootArgs = Arrays.asList(buildArgs());
 
@@ -867,6 +879,13 @@ public final class SootMojo extends AbstractMojo
             runProcess.kill();
             throw ex;
         }
+    }
+
+    private String getSootMinimalClasspath(String soot_classpath) {
+        return Arrays.stream(soot_classpath.split(File.pathSeparator)).filter((p) -> p.contains("soot-") || p.contains("dftracker-")).collect(
+            Collectors.joining(File.pathSeparator));
+        //return "C:\\Users\\wuyijun\\Downloads\\soot-4.1.0-jar-with-dependencies.jar;"
+        //    + "C:\\Users\\tanke.wyj\\.m2\\repository\\com\\alibaba\\intl\\dftracker\\1.0-SNAPSHOT\\dftracker-1.0-SNAPSHOT.jar";
     }
 
     private void waitForForkedSpringApplication() throws MojoFailureException, MojoExecutionException {
@@ -1065,8 +1084,7 @@ public final class SootMojo extends AbstractMojo
             //Scene.v().releasePointsToAnalysis();
             //Scene.v().releaseReachableMethods();
             //Scene.v().releaseSideEffectAnalysis();
-        }
-        catch ( soot.CompilationDeathException e )
+        } catch ( soot.CompilationDeathException e )
         {
             throw new MojoFailureException( "Soot execution failed", e );
         }
@@ -1082,7 +1100,7 @@ public final class SootMojo extends AbstractMojo
         String outputDir = this.project.getModel().getBuild().getOutputDirectory();
         List<String> argsList = Arrays.asList(//"-w",
                 //"-cp", "D:\\Dev\\ProjectsNew\\DFTracker\\dftracker\\target\\classes",
-                "-pp",
+                //"-pp",
                 //"-keep-line-number",
                 //"-oaat",
                 //"-output-format", "jimple",
