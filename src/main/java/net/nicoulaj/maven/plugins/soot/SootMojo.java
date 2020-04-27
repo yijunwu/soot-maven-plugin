@@ -882,10 +882,8 @@ public final class SootMojo extends AbstractMojo
     }
 
     private String getSootMinimalClasspath(String soot_classpath) {
-        return Arrays.stream(soot_classpath.split(File.pathSeparator)).filter((p) -> p.contains("soot-") || p.contains("dftracker-")).collect(
-            Collectors.joining(File.pathSeparator));
-        //return "C:\\Users\\wuyijun\\Downloads\\soot-4.1.0-jar-with-dependencies.jar;"
-        //    + "C:\\Users\\tanke.wyj\\.m2\\repository\\com\\alibaba\\intl\\dftracker\\1.0-SNAPSHOT\\dftracker-1.0-SNAPSHOT.jar";
+        return Arrays.stream(soot_classpath.split(File.pathSeparator)).filter((p) -> p.contains("soot-")
+            || p.contains("dftracker-")).collect(Collectors.joining(File.pathSeparator));
     }
 
     private void waitForForkedSpringApplication() throws MojoFailureException, MojoExecutionException {
