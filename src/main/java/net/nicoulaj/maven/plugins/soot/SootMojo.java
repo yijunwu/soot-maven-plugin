@@ -16,7 +16,6 @@
 package net.nicoulaj.maven.plugins.soot;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -30,11 +29,6 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
-import soot.Main;
-import soot.Pack;
-import soot.PackManager;
-import soot.Scene;
-import soot.Transform;
 import soot.options.Options;
 
 import java.io.File;
@@ -48,19 +42,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.management.MBeanServerConnection;
-import javax.management.ReflectionException;
-import javax.management.remote.JMXConnector;
+import com.alibaba.intl.dftracker.LaunchSoot;
 
-import com.alibaba.intl.dftracker.FlowTrackingInstrumenter;
-
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
-
-import static soot.SootClass.BODIES;
-import static soot.SootClass.SIGNATURES;
 
 /**
  * Mojo that invokes <a href="http://www.sable.mcgill.ca/soot">Soot</a>.
@@ -849,7 +835,6 @@ public final class SootMojo extends AbstractMojo
 
         configureOptions();
 
-        File workingDirectory = null;
         List<String> args = Arrays.asList(
                 "-cp", getSootMinimalClasspath(Options.v().soot_classpath()),
                 "com.alibaba.intl.dftracker.LaunchSoot"
@@ -864,13 +849,12 @@ public final class SootMojo extends AbstractMojo
         } catch (IOException e) {
             throw new MojoFailureException("Can NOT write to file" + cpFile);
         }
-        //mergedArgs.add("-cp");
-        //mergedArgs.add(Options.v().soot_classpath());
 
         List<String> sootArgs = Arrays.asList(buildArgs());
 
         mergedArgs.addAll(sootArgs);
 
+        File workingDirectory = null;
         Map<String, String> environmentVariables = emptyMap();
         RunProcess runProcess = runProcess(workingDirectory, mergedArgs, environmentVariables);
         try {
@@ -924,10 +908,17 @@ public final class SootMojo extends AbstractMojo
 
     protected void runWithMavenJvm()
         throws MojoExecutionException, MojoFailureException {
-        if (!enabled) { return; }
         //configureLogging();
         configureOptions();
-        run();
+        try
+        {
+            String[] args = buildArgs();
+            System.out.println("sootClasspath: " + Options.v().soot_classpath());
+
+            LaunchSoot.main(args);
+        } catch (soot.CompilationDeathException e) {
+            throw new MojoFailureException( "Soot execution failed", e );
+        }
     }
 
     protected void configureLogging()
@@ -1041,49 +1032,17 @@ public final class SootMojo extends AbstractMojo
             //Scene.v().loadBasicClasses();
             //Scene.v().loadNecessaryClasses();
             String[] args = new String[] {};
-            boolean flag = false;
 
             //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig", SIGNATURES);
             //Scene.v().loadBasicClasses();
             //Options.v().set_main_class("com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig");
-            /* add a phase to transformer pack by call Pack.add */
-            Pack jtp = PackManager.v().getPack("jtp");
-            boolean found = false;
-            while (jtp.iterator().hasNext()) {
-                Transform next = jtp.iterator().next();
-                if (next.getTransformer() instanceof FlowTrackingInstrumenter) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                jtp.add(new Transform("jtp.instrumenter", FlowTrackingInstrumenter.v()));
-            }
 
             args = buildArgs();
             System.out.println("sootClasspath: " + Options.v().soot_classpath());
 
-            Scene.v().addBasicClass("java.util.Objects", SIGNATURES);
-            //Scene.v().addBasicClass("com.alibaba.intl.nyse.dal.config.NyseDataSourceConfig", BODIES);
-            //Scene.v().addBasicClass("com.alibaba.intl.dftracker.annotation.EnhancedForTracking", SIGNATURES);
-            Scene.v().addBasicClass("com.alibaba.intl.sourcing.trade.open.api.common.model.TradeProduct", BODIES);
-            Scene.v().addBasicClass("com.alibaba.intl.dftracker.annotation.TrackedUnitAnnotation", BODIES);
-            Scene.v().addBasicClass("com.alibaba.intl.dftracker.runtime.ExecutionNodes", BODIES);
-            Scene.v().addBasicClass("com.alibaba.intl.dftracker.runtime.Shadows", BODIES);
-            Scene.v().addBasicClass("com.alibaba.intl.dftracker.runtime.Shadow", BODIES);
-            Scene.v().addBasicClass("com.alibaba.onetouch.apollo.fxrefund.client.DTO.RefundDetailDTO", SIGNATURES);
+            LaunchSoot.main(args);
 
-            Main.v().run(args);
-
-            //Scene.v().releaseActiveHierarchy();
-            //Scene.v().releaseCallGraph();
-            //Scene.v().releaseClientAccessibilityOracle();
-            //Scene.v().releaseFastHierarchy();
-            //Scene.v().releasePointsToAnalysis();
-            //Scene.v().releaseReachableMethods();
-            //Scene.v().releaseSideEffectAnalysis();
-        } catch ( soot.CompilationDeathException e )
-        {
+        } catch (soot.CompilationDeathException e) {
             throw new MojoFailureException( "Soot execution failed", e );
         }
     }
