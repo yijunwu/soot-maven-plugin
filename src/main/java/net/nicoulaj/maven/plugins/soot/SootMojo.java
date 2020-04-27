@@ -15,7 +15,6 @@
  */
 package net.nicoulaj.maven.plugins.soot;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -817,41 +816,28 @@ public final class SootMojo extends AbstractMojo
         if (!enabled) { return; }
 
         boolean included = isModuleIncluded(this.modulePatterns, this.project);
-        //            boolean contains = this.project.getFile().getPath().contains("nyse\\dal")
-        //                    || this.project.getFile().getPath().contains("nyse\\entry")
-        //                    || this.project.getFile().getPath().contains("nyse\\biz");
         if (!included) { return; }
 
         //configureLogging();
+        configureOptions();
+
+        String dependencyClasspath = fetchDependencyClasspath();
+        String processDir = this.project.getModel().getBuild().getOutputDirectory();
+
         if (fork) {
-            runWithForkedJvm();
+            runWithForkedJvm(dependencyClasspath, processDir);
         } else {
-            runWithMavenJvm();
+            runWithMavenJvm(dependencyClasspath, processDir);
         }
     }
 
-    protected void runWithForkedJvm()
+    protected void runWithForkedJvm(String dependencyClasspath, String processDir)
         throws MojoExecutionException, MojoFailureException {
 
-        configureOptions();
+        List<String> jvmArgs = buildJvmArgs(dependencyClasspath);
+        List<String> sootArgs = buildSootArgsWithClasspath(dependencyClasspath, processDir, true);
 
-        List<String> args = Arrays.asList(
-                "-cp", getSootMinimalClasspath(Options.v().soot_classpath()),
-                "com.alibaba.intl.dftracker.LaunchSoot"
-                //"soot.Main"
-        );
-        List<String> mergedArgs = new ArrayList<>(args);
-        mergedArgs.add("-cpfile");
-        Path cpFile = Paths.get(outputDirectory, "cpfile.tmp");
-        try {
-            Files.write(cpFile, singletonList(Options.v().soot_classpath()));
-            mergedArgs.add(cpFile.toString());
-        } catch (IOException e) {
-            throw new MojoFailureException("Can NOT write to file" + cpFile);
-        }
-
-        List<String> sootArgs = Arrays.asList(buildArgs());
-
+        List<String> mergedArgs = new ArrayList<>(jvmArgs);
         mergedArgs.addAll(sootArgs);
 
         File workingDirectory = null;
@@ -863,6 +849,38 @@ public final class SootMojo extends AbstractMojo
             runProcess.kill();
             throw ex;
         }
+    }
+
+    private List<String> buildSootArgsWithClasspath(String sootClasspath, String processDir, boolean useCpFile) throws MojoFailureException {
+        List<String> sootArgs1 = new ArrayList<>();
+
+        if (useCpFile) {
+            sootArgs1.add("-cpfile");
+            Path cpFile = Paths.get(outputDirectory, "cpfile.tmp");
+            try {
+                Files.write(cpFile, singletonList(sootClasspath));
+                sootArgs1.add(cpFile.toString());
+            } catch (IOException e) {
+                throw new MojoFailureException("Can NOT write to file" + cpFile);
+            }
+        } else {
+            sootArgs1.add("-cp");
+            sootArgs1.add(sootClasspath);
+        }
+
+        List<String> sootArgs2 = Arrays.asList(buildSootArgsWithoutClasspath(sootClasspath, processDir));
+
+        List<String> mergedArgs = new ArrayList<>(sootArgs1);
+        mergedArgs.addAll(sootArgs2);
+        return mergedArgs;
+    }
+
+    private List<String> buildJvmArgs(String dependencyClasspath) {
+        return Arrays.asList(
+                "-cp", getSootMinimalClasspath(dependencyClasspath),
+                "com.alibaba.intl.dftracker.LaunchSoot"
+                //"soot.Main"
+        );
     }
 
     private String getSootMinimalClasspath(String soot_classpath) {
@@ -906,15 +924,14 @@ public final class SootMojo extends AbstractMojo
         return (javaExecutable != null) ? javaExecutable : new JavaExecutable().toString();
     }
 
-    protected void runWithMavenJvm()
+    protected void runWithMavenJvm(String dependencyClasspath, String processDir)
         throws MojoExecutionException, MojoFailureException {
-        //configureLogging();
-        configureOptions();
-        try
-        {
-            String[] args = buildArgs();
+
+        try {
+            //populateOptionsCp(Options.v(), dependencyClasspath);
             System.out.println("sootClasspath: " + Options.v().soot_classpath());
 
+            String[] args = buildSootArgsWithClasspath(dependencyClasspath, processDir, false).toArray(new String[]{});
             LaunchSoot.main(args);
         } catch (soot.CompilationDeathException e) {
             throw new MojoFailureException( "Soot execution failed", e );
@@ -942,9 +959,9 @@ public final class SootMojo extends AbstractMojo
         options.set_validate( validate );
         options.set_debug( debug );
         options.set_debug_resolver( debugResolver );
-        options.set_soot_classpath( sootClasspath );
+        //options.set_soot_classpath( sootClasspath );
         options.set_prepend_classpath( prependClasspath );
-        options.set_process_dir( processDirectory );
+        //options.set_process_dir( processDirectory );
         options.set_ast_metrics( astMetrics );
         options.set_src_prec( sourcePrecedence.getValue() );
         options.set_full_resolver( fullResolver );
@@ -990,10 +1007,9 @@ public final class SootMojo extends AbstractMojo
 
         options.set_oaat( oaat );
 
-        populateOptionsCp(options);
     }
 
-    private void populateOptionsCp(Options options) {
+    private String fetchDependencyClasspath() {
         String dependencyClasspath = "";
         try {
             executeMojo(
@@ -1016,13 +1032,7 @@ public final class SootMojo extends AbstractMojo
         } catch (MojoExecutionException e) {
             e.printStackTrace();
         }
-
-        options.set_prepend_classpath(true);
-        if (StringUtils.isEmpty(options.soot_classpath())) {
-            options.set_soot_classpath(dependencyClasspath);
-        } else {
-            options.set_soot_classpath(options.soot_classpath() + ";" + dependencyClasspath);
-        }
+        return dependencyClasspath;
     }
 
     private boolean isModuleIncluded(String modulePatterns, MavenProject project) {
@@ -1031,8 +1041,7 @@ public final class SootMojo extends AbstractMojo
         return Arrays.stream(modulePatterns.split(",")).anyMatch((p) -> project.getFile().getPath().contains(p));
     }
 
-    String[] buildArgs() {
-        String outputDir = this.project.getModel().getBuild().getOutputDirectory();
+    String[] buildSootArgsWithoutClasspath(String sootClasspath, String processDir) {
         List<String> argsList = Arrays.asList(//"-w",
                 //"-cp", "D:\\Dev\\ProjectsNew\\DFTracker\\dftracker\\target\\classes",
                 //"-pp",
@@ -1046,7 +1055,7 @@ public final class SootMojo extends AbstractMojo
                 //"-p", "bb", "use-original-names:true",
                 "-allow-phantom-refs",
                 "-p", "bop", "enabled:false",
-                "-process-dir", outputDir,
+                "-process-dir", processDir,
                 //"-main-class", "com.alibaba.intl.nyse.dal.config.SequenceUtil", // main-class
                 //"com.alibaba.intl.nyse.dal.config.IcbuFundJpaConfig",
                 "com.alibaba.intl.dftracker.runtime.ExecutionNodes",// argument classes
